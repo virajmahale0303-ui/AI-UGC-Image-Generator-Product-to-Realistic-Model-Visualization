@@ -1,0 +1,2 @@
+# AI-UGC-Image-Generator-Product-to-Realistic-Model-Visualization
+This n8n workflow takes a clothing product image as input, allows the user to provide a creative prompt (e.g., “model sitting on a chair in a cafe”), and generates a highly realistic UGC-style image of a model wearing the clothing.  It automates product visualization for eCommerce brands, dropshippers, and marketers without needing photoshoots.
