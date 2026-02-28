@@ -1,0 +1,307 @@
+{
+  "name": "nano(kinda failed)",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "image",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "upload product image",
+              "fieldType": "file"
+            },
+            {
+              "fieldLabel": "add a prompt"
+            },
+            {
+              "fieldLabel": "only video?",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "yes"
+                  },
+                  {
+                    "option": "no"
+                  }
+                ]
+              },
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.3,
+      "position": [
+        -672,
+        224
+      ],
+      "id": "3a1815f1-1c84-40f6-8e2d-e2ea998be498",
+      "name": "On form submission",
+      "webhookId": "8cf0f32f-8fb8-4681-bcb4-2e30bd94aef5"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.imgbb.com/1/upload?key=7c340a3511f65d45c689750c5231f20d",
+        "sendBody": true,
+        "contentType": "form-urlencoded",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "image",
+              "value": "={{ $json.data }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -672,
+        -192
+      ],
+      "id": "7d1da222-e1fd-4856-8060-661757df9556",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "resource": "image",
+        "operation": "analyze",
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-1.5-pro-latest",
+          "mode": "list",
+          "cachedResultName": "models/gemini-1.5-pro-latest"
+        },
+        "text": "=Image Analysis Instructions\n\nPrimary Task: Analyze the given image to determine if it shows a product,\ncharacter, or both\nOutput Format: Return analysis in YAML format only (no explanations or additional\ncomments)\nFor Product Images:\n\nbrand_name: Brand name shown or inferable from image\ncolor_scheme: List each prominent color with:\n\nhex: Hex code value\nname: Descriptive color name\n\nfont_style: Font characteristics (serif/sans-serif, bold/thin, etc.)\nvisual_description: 1-2 sentences describing what's visible (exclude background)\n\n\nFor Character Images:\n\ncharacter_name: Character name if visible or inferable\ncolor_scheme: List each prominent color with:\n\nhex: Hex code value\nname: Descriptive color name\n\noutfit_style: Description of clothing, accessories, or notable features\nvisual_description: 1-2 sentences describing character appearance (exclude\nbackground)\n\n\nFor Images Containing Both: Provide both product and character descriptions using\nthe respective fields above\nImportant: Return only the YAML output with no additional text\n",
+        "inputType": "=url",
+        "imageUrls": "={{ $json.data.url }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1,
+      "position": [
+        -448,
+        -192
+      ],
+      "id": "733ce155-fc33-47c5-86ad-b0c8682f7651",
+      "name": "Analyze image1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "ddw7BAxexWDN9eQQ",
+          "name": "real api"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -464,
+        208
+      ],
+      "id": "406a6c53-e406-4f85-b40b-a8d0d5f0b9d2",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "ddw7BAxexWDN9eQQ",
+          "name": "real api"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.toolThink",
+      "typeVersion": 1.1,
+      "position": [
+        -352,
+        208
+      ],
+      "id": "6e8988b1-6ed0-4e6f-b702-29c3cd0af288",
+      "name": "Think"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Primary Objective: Create 1 image prompt following system guidelines\nAccuracy Requirements:\n\nDepict reference image as accurately as possible\nEnsure all text elements are reproduced precisely\nMaintain visual fidelity to original\n\nInput Sources:\n\nUser Instructions:{{ $('On form submission').item.json['add a prompt'] }}\nReference Image Description:{{ $json.content }}\nAspect Ratio: User's preferred ratio (infer from message; default to vertical if\nunspecified)\n\nProcess Steps:\n\nAnalyze user's prompt requirements\nReview reference image description thoroughly\nDetermine appropriate aspect ratio\nUse Think tool to verify output before finalizing\n\nOutput: Single, comprehensive image generation prompt that accurately captures all\nspecified elements\n",
+        "options": {
+          "systemMessage": "=System Prompt: Image Prompt Generator\n\nDefault Behavior:\nIf user instructions lack detail: Generate \"put this (product) into the scene with the (character)\"\n\n\nOverride: Follow explicit user style/setting requests when provided\n\nCore Task:\nTake reference image/product and place into high-end, professional photo shoots.\n\nMandatory Professional Style Elements:\n\nPerfect studio lighting (soft shadows, even exposure, cinematic mood if needed)\n\nPolished, glossy finish (editorial / fashion campaign quality)\n\nSharp focus with high resolution\n\n\nStylized framing with symmetry and balance\n\nControlled environment (studio, curated lifestyle setups, luxury interiors, outdoor editorial vibe)\n\nFashion-grade posing and expressions (confidence, sophistication, artistic mood)\n\nText Preservation: All product text/logos must remain accurate and crystal clear\n\nNo Fabrication: Never invent additional claims or elements\n\nCamera Parameters Must Include:\n\nProfessional DSLR or mirrorless look (Canon EOS R5, Sony A7R IV, Hasselblad)\n\nHigh-end lens descriptors (85mm f/1.4, 50mm f/1.2 for depth, 24-70mm f/2.8 for editorial versatility)\n\nStudio or editorial photography terms (softbox, ring light, strobe, natural golden hour, etc.)\n\nDescriptors for composition: centered, cinematic crop, perfect symmetry\n\nYAML Output Requirements\n\nAlways include both:\n\nimage_prompt (stringified YAML with scene details)\n\naspect_ratio_image (\"3:2\" for horizontal, \"2:3\" for vertical, depending on campaign look)\n\nExample (Professional Version)\n{\n  \"scenes\": [\n    {\n      \"image_prompt\": \"action: model showcases the product confidently in a high-end editorial shoot\\ncharacter: fashion model, well-groomed, styled for luxury campaign\\nproduct: display product with all visible text clear and sharp\\nsetting: professional photography studio with softbox lighting, glossy backdrop\\ncamera: professional DSLR with 85mm f1.4 lens, cinematic depth of field, perfectly sharp\\nstyle: polished, high-fashion campaign, magazine-quality, \\ntext_accuracy: preserve all visible text exactly as in reference image\",\n      \"aspect_ratio_image\": \"2:3\"\n    }\n  ]\n}"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        -480,
+        -16
+      ],
+      "id": "7f9748db-a9e1-443d-b05b-6b457521209f",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "operation": "binaryToPropery",
+        "binaryPropertyName": "upload_product_image",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        -672,
+        -32
+      ],
+      "id": "c534fd68-c9dc-4ca8-a38c-98c9b84b4108",
+      "name": "Extract from File"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image-preview:generateContent",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-goog-api-key",
+              "value": "AIzaSyB-6GwGgKSQlvpTLpreqoOZfzAWmjdj_ps"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"contents\": [\n    {\n      \"parts\": [\n        {\n          \"text\": \"{{ $json.output.replace(/\\\"/g, '\\\\\\\"').replace(/\\n/g, '\\\\n') }}\"\n        },\n        {\n          \"inlineData\": {\n            \"mimeType\": \"image/jpeg\",\n            \"data\":\"{{ $('Extract from File').item.json.data }}\"\n          }\n        }\n      ]\n    }\n  ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -208,
+        -192
+      ],
+      "id": "e569c6dd-d1c3-4483-8f35-fac3259aeb33",
+      "name": "HTTP Request1"
+    },
+    {
+      "parameters": {
+        "operation": "toBinary",
+        "sourceProperty": "candidates[0].content.parts[0].inlineData.data",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        -192
+      ],
+      "id": "bc487346-2930-4a36-8666-143c6e6e7635",
+      "name": "Convert to File"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Analyze image1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analyze image1": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Think": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request1": {
+      "main": [
+        [
+          {
+            "node": "Convert to File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "b2dd5e2b-9296-4a4e-902b-63afcffb3d3d",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "f256b50669bed1102be28c4df0e4c87753be65ceaede2f519a311ad5384d7247"
+  },
+  "id": "aHIpjxE57VQa6CPO",
+  "tags": []
+}
