@@ -45,7 +45,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "https://api.imgbb.com/1/upload?key=7c340a3511f65d45c689750c5231f20d",
+        "url": "https://api.imgbb.com/1/upload?key=",
         "sendBody": true,
         "contentType": "form-urlencoded",
         "bodyParameters": {
@@ -168,7 +168,7 @@
           "parameters": [
             {
               "name": "X-goog-api-key",
-              "value": "AIzaSyB-6GwGgKSQlvpTLpreqoOZfzAWmjdj_ps"
+              "value": ""
             }
           ]
         },
